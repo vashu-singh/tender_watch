@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Disaster Tender Watch</title>
+<style>
+:root{--bg:#F2F6F7;--sf:#fff;--ink:#12262B;--mu:#5B6F74;--ln:#D5E0E3;--teal:#0F6E7A;--tealbg:#DDF0F2;--amb:#9A5B00;--ambbg:#FFEFCF;--red:#A82D1A;--redbg:#FBE3DE;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1A1D;--sf:#15262A;--ink:#E6F0F2;--mu:#91A8AD;--ln:#27403F;--teal:#5CC3CF;--tealbg:#143A40;--amb:#F0B44C;--ambbg:#3A2B0E;--red:#F28B78;--redbg:#43201A;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:800px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;line-height:1.15;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mu);margin:0 0 14px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:14px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mu);font:inherit;font-weight:600;padding:10px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--teal);border-color:var(--teal)}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--ln);border-radius:6px;background:var(--sf);color:var(--ink);font:inherit}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}
+.f .w{grid-column:1/3}
+label.c{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.92rem;margin-bottom:12px}
+label.c input{width:auto}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.row{background:var(--sf);border-left:5px solid var(--ln);padding:12px 14px;margin-bottom:10px;border-radius:0 6px 6px 0}
+.row.new{border-color:var(--teal)}.row.warn{border-color:var(--amb)}.row.hot{border-color:var(--red)}.row.old{opacity:.6}
+.row h3{margin:0 0 4px;font-size:1rem;line-height:1.35;overflow-wrap:anywhere}
+.row h3 a{color:var(--ink);text-decoration:none}.row h3 a:hover{text-decoration:underline}
+.meta{color:var(--mu);font-size:.86rem}
+.pill{display:inline-block;font-size:.78rem;font-weight:600;padding:2px 8px;border-radius:4px;margin:8px 6px 0 0;background:var(--tealbg);color:var(--teal)}
+.pill.t{background:none;border:1px solid var(--ln);color:var(--mu);font-weight:400}
+.warn .pill.d{background:var(--ambbg);color:var(--amb)}.hot .pill.d{background:var(--redbg);color:var(--red)}
+.more{width:100%;padding:12px;border:1px solid var(--ln);background:var(--sf);color:var(--teal);font:inherit;font-weight:600;border-radius:6px;cursor:pointer}
+.empty{color:var(--mu);padding:20px 0}
+.hl{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--ln);font-size:.92rem}
+.hl a{color:var(--teal);overflow-wrap:anywhere}.hl small{color:var(--mu);display:block}
+.bad{color:var(--red);font-weight:600;white-space:nowrap}.good{color:var(--teal);white-space:nowrap}
+</style></head><body><main>
+<h1>Disaster tender watch</h1>
+<p class="sub" id="meta">Loading latest scan.</p>
+<div class="tabs"><button aria-selected="true" data-v="t">Tenders</button><button aria-selected="false" data-v="s">Source health</button></div>
+<div id="tv">
+<input type="search" id="q" placeholder="Search title, organisation or tag">
+<div class="f"><select id="when"><option value="all">All found</option><option value="week">Found in last 7 days</option><option value="new">New in latest scan</option></select>
+<select id="geo"><option value="">All geographies</option></select>
+<select id="cat" class="w"><option value="">All categories</option></select></div>
+<label class="c"><input type="checkbox" id="soon"> Only tenders closing within 14 days</label>
+<div id="list"></div></div>
+<div id="sv" hidden></div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safe=u=>/^https?:\/\//i.test(u)?u:"#";
+const dd=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+const fmt=d=>new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+const today=new Date().toISOString().slice(0,10);
+let T=[],ST=null,S={n:100};
+function fill(sel,vals){$(sel).insertAdjacentHTML("beforeend",[...new Set(vals)].sort().map(v=>`<option>${esc(v)}</option>`).join(""))}
+function pick(){return T.filter(x=>{
+ if($("#when").value==="new"&&!(x.first_seen===ST.run_date&&!x.baseline))return false;
+ if($("#when").value==="week"&&dd(x.first_seen,today)>7)return false;
+ if($("#cat").value&&x.category!==$("#cat").value)return false;
+ if($("#geo").value&&x.geo!==$("#geo").value)return false;
+ if($("#soon").checked){if(!x.deadline)return false;const d=dd(today,x.deadline);if(d<0||d>14)return false}
+ const q=$("#q").value.toLowerCase();
+ return !q||(x.title+" "+x.source+" "+(x.tags||[]).join(" ")).toLowerCase().includes(q)})}
+function list(){
+ let r=pick();
+ if($("#soon").checked)r.sort((a,b)=>a.deadline.localeCompare(b.deadline));
+ const shown=r.slice(0,S.n);
+ $("#list").innerHTML=(r.length?`<p class="meta">${r.length} tenders</p>`:"")+(shown.length?shown.map(x=>{
+  const d=x.deadline?dd(today,x.deadline):null;
+  const cls=d!==null&&d<0?"old":d!==null&&d<=3?"hot":d!==null&&d<=14?"warn":(x.first_seen===ST.run_date&&!x.baseline?"new":"");
+  const dl=d===null?"":d<0?`Date on page has passed (${fmt(x.deadline)})`:`Closing around ${fmt(x.deadline)}, ${d} days (guessed)`;
+  return `<div class="row ${cls}"><h3><a href="${esc(safe(x.link))}" target="_blank" rel="noopener">${esc(x.title)}</a></h3><div class="meta">${esc(x.source)}, ${esc(x.geo)}</div>`+
+  (dl?`<span class="pill d">${dl}</span>`:"")+`<span class="pill t">Found ${fmt(x.first_seen)}</span>`+(x.tags||[]).map(t=>`<span class="pill t">${esc(t)}</span>`).join("")+`</div>`}).join(""):'<p class="empty">No tenders match these filters. Widen the filters or clear the search.</p>')+
+  (r.length>S.n?`<button class="more" id="more">Show more (${r.length-S.n} left)</button>`:"");
+ const m=$("#more");if(m)m.onclick=()=>{S.n+=100;list()}}
+function health(){
+ const s=[...ST.sources].sort((a,b)=>a.ok-b.ok||a.name.localeCompare(b.name));
+ $("#sv").innerHTML=`<p class="meta">${ST.sources_ok} sources read, ${ST.sources_failed} failed. Failed or empty sources need a better URL or a browser-based scraper.</p>`+
+ s.map(x=>`<div class="hl"><div><a href="${esc(safe(x.url))}" target="_blank" rel="noopener">${esc(x.name)}</a><small>${esc(x.category)}${x.error?", "+esc(x.error):""}</small></div>${x.ok?`<span class="${x.count?"good":"meta"}">${x.count} found</span>`:'<span class="bad">Failed</span>'}</div>`).join("")}
+async function load(){
+ try{
+  [T,ST]=await Promise.all([fetch("tenders.json").then(r=>r.json()),fetch("status.json").then(r=>r.json())]);
+  $("#meta").textContent=`Last scan ${new Date(ST.run_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}. ${ST.total} tenders from ${ST.sources_ok} sources, ${ST.new_count} new in the latest scan.`+(ST.baseline?" First scan: all results count as existing.":"");
+  fill("#geo",T.map(x=>x.geo));fill("#cat",T.map(x=>x.category));list();health();
+ }catch(e){$("#meta").textContent="No scan data yet.";$("#list").innerHTML='<p class="empty">Run the "Daily tender scan" workflow once (see README), then reload. Opening this file directly from your computer also will not load data; use the GitHub Pages link.</p>'}}
+["q","when","geo","cat","soon"].forEach(i=>$("#"+i).addEventListener(i==="q"?"input":"change",()=>{S.n=100;list()}));
+document.querySelector(".tabs").onclick=e=>{const v=e.target.dataset.v;if(!v)return;
+ document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));$("#tv").hidden=v!=="t";$("#sv").hidden=v!=="s"};
+load();
+</script></body></html>
