@@ -48,7 +48,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 <section id="dv"></section>
 <section id="tv" hidden>
 <input type="search" id="q" placeholder="Search title, organisation or tag">
-<div class="f"><select id="st"><option value="live">Live now</option><option value="soon">Closing in 14 days</option><option value="new">New in latest scan</option><option value="expired">Deadline passed</option><option value="all">Everything found</option></select>
+<div class="f"><select id="st"><option value="live">Live now</option><option value="soon">Closing in 14 days</option><option value="new">New in latest scan</option><option value="nodate">Date not found (check)</option><option value="expired">Deadline passed</option><option value="all">Everything found</option></select>
 <select id="geo"><option value="">All geographies</option></select>
 <select id="cat" class="w"><option value="">All categories</option></select></div>
 <div id="list"></div></section>
@@ -63,7 +63,8 @@ const dd=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
 const fmt=d=>new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
 const today=iso(0);
 let T=[],ST={},n=60;
-const live=x=>(!x.deadline||dd(today,x.deadline)>=0)&&dd(x.last_seen,ST.run_date)<=3;
+const fresh=x=>dd(x.last_seen,ST.run_date)<=3;
+const live=x=>fresh(x)&&(x.deadline?dd(today,x.deadline)>=0:(!x.baseline&&dd(x.first_seen,today)<=30));
 const isNew=x=>x.first_seen===ST.run_date&&!x.baseline;
 const left=x=>x.deadline?dd(today,x.deadline):null;
 function row(x){const d=left(x);
@@ -91,6 +92,7 @@ function list(){
   if(st==="live"&&!live(x))return false;
   if(st==="soon"&&!(live(x)&&d!==null&&d<=14))return false;
   if(st==="new"&&!isNew(x))return false;
+  if(st==="nodate"&&!(!x.deadline&&fresh(x)&&!live(x)))return false;
   if(st==="expired"&&!(d!==null&&d<0))return false;
   if($("#cat").value&&x.category!==$("#cat").value)return false;
   if($("#geo").value&&x.geo!==$("#geo").value)return false;
