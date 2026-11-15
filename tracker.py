@@ -5,7 +5,7 @@ import hashlib, json, os, re, smtplib
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import requests, urllib3
 from bs4 import BeautifulSoup
 
@@ -20,13 +20,27 @@ KEYWORDS = ["disaster", "drr", "risk assessment", "risk reduction", "risk manage
     "early warning", "climate risk", "climate change", "adaptation", "emergency", "preparedness",
     "pdna", "post-disaster", "sendai", "glof", "wildfire", "forest fire", "storm surge", "multi-hazard",
     "geospatial", "remote sensing", "gis ", "mitigation", "evacuation", "shelter", "civil defence"]
-TENDER_WORDS = ["tender", "rfp", "rfq", "eoi", "expression of interest", "request for proposal",
-    "request for quotation", "invitation for bid", "notice inviting", "bid", "consultancy", "consultant", "empanelment"]
+TENDER_WORDS = ["rfp", "rfq", "eoi", "tender", "expression of interest", "request for proposal",
+    "request for quotation", "request for bid", "call for proposal", "invitation for bid", "invitation to bid",
+    "notice inviting", "bid", "consultancy", "consulting services", "terms of reference", "empanelment"]
 KW = re.compile(r"\b(" + "|".join(re.escape(k) for k in KEYWORDS) + ")", re.I)
-TW = re.compile(r"\b(" + "|".join(re.escape(k) for k in TENDER_WORDS) + r")\b", re.I)
+TW = re.compile(r"\b(" + "|".join(re.escape(k) for k in TENDER_WORDS) + r")s?\b", re.I)
+# jobs, academic posts and similar noise are dropped even if they contain a tender word
+BLOCK = re.compile(r"\b(recruit|vacanc|walk-in|walk in|deputation|contractual basis|on contract|appointment|"
+    r"position of|post of|posts of|filling up|jobs?|career|internship|fellowship|scholarship|admission|"
+    r"professor|faculty|lecturer|individual consultant|individual contractor|apply now)", re.I)
 NATIVE = ("Central: nodal", "Central: science", "Central: water", "State SDMA", "State institutes", "State remote")
 DATE_RE = re.compile(r"\b(\d{1,2})[-/. ]+(\d{1,2}|[A-Za-z]{3,9})[-/. ,]+(\d{4})\b")
 MONTHS = {m: i for i, m in enumerate("jan feb mar apr may jun jul aug sep oct nov dec".split(), 1)}
+
+
+def relevant(text, native):
+    """Return tag list if this looks like a real RFP/tender, else None."""
+    text = " ".join(text.split())
+    if len(text) < 30 or len(text.split()) < 5 or BLOCK.search(text) or not TW.search(text):
+        return None
+    tags = sorted({t.lower().strip() for t in KW.findall(text)})
+    return tags[:6] if (tags or native) else None
 
 
 def fetch(url):
@@ -61,14 +75,16 @@ def scan(src, html=None):
         text = " ".join(text.split())
         if not text or len(text) > 600 or not href or href.startswith(("javascript:", "mailto:", "#")):
             return
-        tags = sorted({t.lower().strip() for t in KW.findall(text)})
-        if not (tags or (native and len(text) >= 25 and TW.search(text))):
+        tags = relevant(text, native)
+        if tags is None:
             return
         link = urljoin(url, href)
+        if urlparse(link).path in ("", "/") or link.rstrip("/") == url.rstrip("/"):
+            return  # a home page, not a tender
         if link in links:
             return
         links.add(link)
-        items[text[:200].lower()] = {"title": text[:300], "link": link, "tags": tags[:6],
+        items[text[:200].lower()] = {"title": text[:300], "link": link, "tags": tags,
                                      "deadline": find_deadline(text)}
 
     for tr in soup.select("tr"):
@@ -101,7 +117,9 @@ def main():
         baseline = False
     except FileNotFoundError:
         old, baseline = [], True  # first run: everything found is "existing", not "new"
-    db = {t["id"]: t for t in old}
+    native_cats = {x["category"] for x in sources if x["category"].startswith(NATIVE)}
+    db = {t["id"]: t for t in old
+          if relevant(t["title"], t["category"] in native_cats) is not None}  # drop old junk
 
     def work(src):
         try:
