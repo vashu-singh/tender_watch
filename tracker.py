@@ -34,10 +34,12 @@ DATE_RE = re.compile(r"\b(\d{1,2})[-/. ]+(\d{1,2}|[A-Za-z]{3,9})[-/. ,]+(\d{4})\
 MONTHS = {m: i for i, m in enumerate("jan feb mar apr may jun jul aug sep oct nov dec".split(), 1)}
 
 
-def relevant(text, native):
+def relevant(text, native, link=""):
     """Return tag list if this looks like a real RFP/tender, else None."""
     text = " ".join(text.split())
     if len(text) < 30 or len(text.split()) < 5 or BLOCK.search(text) or not TW.search(text):
+        return None
+    if stale(text, link):
         return None
     tags = sorted({t.lower().strip() for t in KW.findall(text)})
     return tags[:6] if (tags or native) else None
@@ -52,18 +54,45 @@ def fetch(url):
     return r.text
 
 
-def find_deadline(text):
-    """Best guess: the latest plausible date in the text (usually the closing date)."""
-    today, best = datetime.now(timezone.utc).date(), None
+def _today():
+    return datetime.now(timezone.utc).date()
+
+
+MONTH_FIRST = re.compile(r"\b([A-Za-z]{3,9})\.? (\d{1,2})(?:st|nd|rd|th)?,? (\d{4})\b")
+YEAR_RE = re.compile(r"(?<!\d)(20\d\d)(?!\d)")
+
+
+def all_dates(text):
+    out = []
     for d, m, y in DATE_RE.findall(text):
         try:
             mo = int(m) if m.isdigit() else MONTHS[m[:3].lower()]
-            dt = datetime(int(y), mo, int(d)).date()
+            out.append(datetime(int(y), mo, int(d)).date())
         except (ValueError, KeyError):
-            continue
-        if today - timedelta(days=30) <= dt <= today + timedelta(days=400):
-            best = max(best, dt) if best else dt
-    return best.isoformat() if best else None
+            pass
+    for m, d, y in MONTH_FIRST.findall(text):
+        try:
+            out.append(datetime(int(y), MONTHS[m[:3].lower()], int(d)).date())
+        except (ValueError, KeyError):
+            pass
+    return out
+
+
+def find_deadline(text):
+    """Best guess: the latest plausible date in the text (usually the closing date)."""
+    today = _today()
+    ok = [d for d in all_dates(text) if today - timedelta(days=30) <= d <= today + timedelta(days=400)]
+    return max(ok).isoformat() if ok else None
+
+
+def stale(text, link=""):
+    """True if the text or link shows this is an old tender (past dates, or only old years)."""
+    today = _today()
+    ds = all_dates(text)
+    if ds and max(ds) < today - timedelta(days=7):
+        return True
+    years = [int(y) for y in YEAR_RE.findall(text + " " + link)]
+    return bool(years) and max(years) < today.year
 
 
 def scan(src, html=None):
@@ -75,10 +104,10 @@ def scan(src, html=None):
         text = " ".join(text.split())
         if not text or len(text) > 600 or not href or href.startswith(("javascript:", "mailto:", "#")):
             return
-        tags = relevant(text, native)
+        link = urljoin(url, href)
+        tags = relevant(text, native, link)
         if tags is None:
             return
-        link = urljoin(url, href)
         if urlparse(link).path in ("", "/") or link.rstrip("/") == url.rstrip("/"):
             return  # a home page, not a tender
         if link in links:
@@ -119,7 +148,7 @@ def main():
         old, baseline = [], True  # first run: everything found is "existing", not "new"
     native_cats = {x["category"] for x in sources if x["category"].startswith(NATIVE)}
     db = {t["id"]: t for t in old
-          if relevant(t["title"], t["category"] in native_cats) is not None}  # drop old junk
+          if relevant(t["title"], t["category"] in native_cats, t.get("link", "")) is not None}  # drop old junk
 
     def work(src):
         try:
