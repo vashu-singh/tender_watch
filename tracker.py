@@ -52,9 +52,9 @@ def find_deadline(text):
     return best.isoformat() if best else None
 
 
-def scan(src):
+def scan(src, html=None):
     url, native = src["url"], src["category"].startswith(NATIVE)
-    soup = BeautifulSoup(fetch(url), "html.parser")
+    soup = BeautifulSoup(html if html is not None else fetch(url), "html.parser")
     items, links = {}, set()
 
     def add(text, href):

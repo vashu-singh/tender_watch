@@ -4,20 +4,25 @@
 <title>Disaster Tender Watch</title>
 <style>
 :root{--bg:#F2F6F7;--sf:#fff;--ink:#12262B;--mu:#5B6F74;--ln:#D5E0E3;--teal:#0F6E7A;--tealbg:#DDF0F2;--amb:#9A5B00;--ambbg:#FFEFCF;--red:#A82D1A;--redbg:#FBE3DE;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0E1A1D;--sf:#15262A;--ink:#E6F0F2;--mu:#91A8AD;--ln:#27403F;--teal:#5CC3CF;--tealbg:#143A40;--amb:#F0B44C;--ambbg:#3A2B0E;--red:#F28B78;--redbg:#43201A;color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1A1D;--sf:#15262A;--ink:#E6F0F2;--mu:#91A8AD;--ln:#27403F;--teal:#5CC3CF;--tealbg:#143A40;--amb:#F0B44C;--ambbg:#3A2B0E;--red:#F28B78;--redbg:#43201A;color-scheme:dark}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:800px;margin:0 auto;padding:20px 16px 48px}
-h1{font-size:1.6rem;line-height:1.15;margin:0 0 4px;letter-spacing:-.01em}
-.sub{color:var(--mu);margin:0 0 14px}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:14px}
-.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mu);font:inherit;font-weight:600;padding:10px 14px;cursor:pointer}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+main{max-width:860px;margin:0 auto;padding:18px 14px 56px}
+h1{font-size:1.55rem;line-height:1.15;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:1.05rem;margin:26px 0 10px}
+.sub{color:var(--mu);margin:0 0 12px;font-size:.92rem}
+.demo{background:var(--ambbg);color:var(--amb);padding:10px 12px;border-radius:6px;font-size:.9rem;margin-bottom:12px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--ln);margin-bottom:16px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
+.tabs button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mu);font:inherit;font-weight:600;padding:11px 6px;cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--teal);border-color:var(--teal)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(min-width:640px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:12px;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.tile b{display:block;font-size:2rem;line-height:1.1;color:var(--teal)}
+.tile.hot b{color:var(--red)}.tile.warn b{color:var(--amb)}
+.tile span{color:var(--mu);font-size:.85rem}
 input,select{width:100%;padding:10px 12px;border:1px solid var(--ln);border-radius:6px;background:var(--sf);color:var(--ink);font:inherit}
-.f{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}
-.f .w{grid-column:1/3}
-label.c{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.92rem;margin-bottom:12px}
-label.c input{width:auto}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}.f .w{grid-column:1/3}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .row{background:var(--sf);border-left:5px solid var(--ln);padding:12px 14px;margin-bottom:10px;border-radius:0 6px 6px 0}
 .row.new{border-color:var(--teal)}.row.warn{border-color:var(--amb)}.row.hot{border-color:var(--red)}.row.old{opacity:.6}
@@ -28,64 +33,86 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .pill.t{background:none;border:1px solid var(--ln);color:var(--mu);font-weight:400}
 .warn .pill.d{background:var(--ambbg);color:var(--amb)}.hot .pill.d{background:var(--redbg);color:var(--red)}
 .more{width:100%;padding:12px;border:1px solid var(--ln);background:var(--sf);color:var(--teal);font:inherit;font-weight:600;border-radius:6px;cursor:pointer}
-.empty{color:var(--mu);padding:20px 0}
+.empty{color:var(--mu);padding:16px 0}
+.bar{display:grid;grid-template-columns:minmax(90px,38%) 1fr 34px;gap:8px;align-items:center;font-size:.86rem;margin-bottom:6px}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--teal)}
+.bar span:last-child{text-align:right;color:var(--mu)}
 .hl{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--ln);font-size:.92rem}
 .hl a{color:var(--teal);overflow-wrap:anywhere}.hl small{color:var(--mu);display:block}
 .bad{color:var(--red);font-weight:600;white-space:nowrap}.good{color:var(--teal);white-space:nowrap}
 </style></head><body><main>
 <h1>Disaster tender watch</h1>
 <p class="sub" id="meta">Loading latest scan.</p>
-<div class="tabs"><button aria-selected="true" data-v="t">Tenders</button><button aria-selected="false" data-v="s">Source health</button></div>
-<div id="tv">
+<div id="demo" class="demo" hidden>Demo data. No scan results found yet, so these are example tenders. Run the daily scan workflow to see real ones.</div>
+<div class="tabs" role="tablist"><button aria-selected="true" data-v="d">Dashboard</button><button aria-selected="false" data-v="t">Tenders</button><button aria-selected="false" data-v="s">Sources</button></div>
+<section id="dv"></section>
+<section id="tv" hidden>
 <input type="search" id="q" placeholder="Search title, organisation or tag">
-<div class="f"><select id="when"><option value="all">All found</option><option value="week">Found in last 7 days</option><option value="new">New in latest scan</option></select>
+<div class="f"><select id="st"><option value="live">Live now</option><option value="soon">Closing in 14 days</option><option value="new">New in latest scan</option><option value="expired">Deadline passed</option><option value="all">Everything found</option></select>
 <select id="geo"><option value="">All geographies</option></select>
 <select id="cat" class="w"><option value="">All categories</option></select></div>
-<label class="c"><input type="checkbox" id="soon"> Only tenders closing within 14 days</label>
-<div id="list"></div></div>
-<div id="sv" hidden></div>
+<div id="list"></div></section>
+<section id="sv" hidden></section>
 </main>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safe=u=>/^https?:\/\//i.test(u)?u:"#";
+const iso=n=>new Date(Date.now()+n*864e5).toISOString().slice(0,10);
 const dd=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
 const fmt=d=>new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
-const today=new Date().toISOString().slice(0,10);
-let T=[],ST=null,S={n:100};
-function fill(sel,vals){$(sel).insertAdjacentHTML("beforeend",[...new Set(vals)].sort().map(v=>`<option>${esc(v)}</option>`).join(""))}
-function pick(){return T.filter(x=>{
- if($("#when").value==="new"&&!(x.first_seen===ST.run_date&&!x.baseline))return false;
- if($("#when").value==="week"&&dd(x.first_seen,today)>7)return false;
- if($("#cat").value&&x.category!==$("#cat").value)return false;
- if($("#geo").value&&x.geo!==$("#geo").value)return false;
- if($("#soon").checked){if(!x.deadline)return false;const d=dd(today,x.deadline);if(d<0||d>14)return false}
- const q=$("#q").value.toLowerCase();
- return !q||(x.title+" "+x.source+" "+(x.tags||[]).join(" ")).toLowerCase().includes(q)})}
+const today=iso(0);
+let T=[],ST={},n=60;
+const live=x=>(!x.deadline||dd(today,x.deadline)>=0)&&dd(x.last_seen,ST.run_date)<=3;
+const isNew=x=>x.first_seen===ST.run_date&&!x.baseline;
+const left=x=>x.deadline?dd(today,x.deadline):null;
+function row(x){const d=left(x);
+ const cls=d!==null&&d<0?"old":d!==null&&d<=3?"hot":d!==null&&d<=14?"warn":isNew(x)?"new":"";
+ const dl=d===null?"Deadline not found, check the source":d<0?`Date on page has passed (${fmt(x.deadline)})`:d===0?"Closes today (guessed)":`Closes ${fmt(x.deadline)}, ${d} day${d>1?"s":""} left (guessed)`;
+ return `<div class="row ${cls}"><h3><a href="${esc(safe(x.link))}" target="_blank" rel="noopener">${esc(x.title)}</a></h3><div class="meta">${esc(x.source)}, ${esc(x.geo)}</div><span class="pill d">${dl}</span>${isNew(x)?'<span class="pill">New</span>':""}`+(x.tags||[]).slice(0,4).map(t=>`<span class="pill t">${esc(t)}</span>`).join("")+`</div>`}
+function bars(el,key){const c={};T.filter(live).forEach(x=>c[x[key]]=(c[x[key]]||0)+1);
+ const e=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,8),m=e.length?e[0][1]:1;
+ return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><span><i style="width:${Math.max(4,v/m*100)}%"></i></span><span>${v}</span></div>`).join("")||'<p class="empty">Nothing yet.</p>'}
+function dash(){
+ const L=T.filter(live),s7=L.filter(x=>x.deadline&&left(x)<=7),nw=T.filter(isNew);
+ const soon=L.filter(x=>x.deadline&&left(x)<=30).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,6);
+ $("#dv").innerHTML=`<div class="tiles">
+ <button class="tile" data-go="live"><b>${L.length}</b><span>Live tenders</span></button>
+ <button class="tile ${s7.length?"hot":""}" data-go="soon"><b>${s7.length}</b><span>Closing in 7 days</span></button>
+ <button class="tile warn" data-go="new"><b>${nw.length}</b><span>New in latest scan</span></button>
+ <button class="tile" data-go="src"><b>${ST.sources_ok}/${ST.sources_ok+ST.sources_failed}</b><span>Sources working</span></button></div>
+ <h2>Closing soonest</h2>${soon.length?soon.map(row).join(""):'<p class="empty">No tenders with a deadline in the next 30 days.</p>'}
+ <h2>Live tenders by category</h2>${bars("c","category")}
+ <h2>Live tenders by geography</h2>${bars("g","geo")}`;
+ document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{const g=b.dataset.go;if(g==="src")return tab("s");$("#st").value=g;n=60;tab("t");list()})}
 function list(){
- let r=pick();
- if($("#soon").checked)r.sort((a,b)=>a.deadline.localeCompare(b.deadline));
- const shown=r.slice(0,S.n);
- $("#list").innerHTML=(r.length?`<p class="meta">${r.length} tenders</p>`:"")+(shown.length?shown.map(x=>{
-  const d=x.deadline?dd(today,x.deadline):null;
-  const cls=d!==null&&d<0?"old":d!==null&&d<=3?"hot":d!==null&&d<=14?"warn":(x.first_seen===ST.run_date&&!x.baseline?"new":"");
-  const dl=d===null?"":d<0?`Date on page has passed (${fmt(x.deadline)})`:`Closing around ${fmt(x.deadline)}, ${d} days (guessed)`;
-  return `<div class="row ${cls}"><h3><a href="${esc(safe(x.link))}" target="_blank" rel="noopener">${esc(x.title)}</a></h3><div class="meta">${esc(x.source)}, ${esc(x.geo)}</div>`+
-  (dl?`<span class="pill d">${dl}</span>`:"")+`<span class="pill t">Found ${fmt(x.first_seen)}</span>`+(x.tags||[]).map(t=>`<span class="pill t">${esc(t)}</span>`).join("")+`</div>`}).join(""):'<p class="empty">No tenders match these filters. Widen the filters or clear the search.</p>')+
-  (r.length>S.n?`<button class="more" id="more">Show more (${r.length-S.n} left)</button>`:"");
- const m=$("#more");if(m)m.onclick=()=>{S.n+=100;list()}}
-function health(){
- const s=[...ST.sources].sort((a,b)=>a.ok-b.ok||a.name.localeCompare(b.name));
+ const st=$("#st").value,q=$("#q").value.toLowerCase();
+ let r=T.filter(x=>{const d=left(x);
+  if(st==="live"&&!live(x))return false;
+  if(st==="soon"&&!(live(x)&&d!==null&&d<=14))return false;
+  if(st==="new"&&!isNew(x))return false;
+  if(st==="expired"&&!(d!==null&&d<0))return false;
+  if($("#cat").value&&x.category!==$("#cat").value)return false;
+  if($("#geo").value&&x.geo!==$("#geo").value)return false;
+  return !q||(x.title+" "+x.source+" "+(x.tags||[]).join(" ")).toLowerCase().includes(q)});
+ r.sort((a,b)=>(st==="live"||st==="soon")?((a.deadline?0:1)-(b.deadline?0:1)||(a.deadline||"").localeCompare(b.deadline||"")||b.first_seen.localeCompare(a.first_seen)):b.first_seen.localeCompare(a.first_seen));
+ $("#list").innerHTML=(r.length?`<p class="meta">${r.length} tenders</p>`+r.slice(0,n).map(row).join(""):'<p class="empty">No tenders match. Change the status or clear the search.</p>')+(r.length>n?`<button class="more" id="more">Show more (${r.length-n} left)</button>`:"");
+ const m=$("#more");if(m)m.onclick=()=>{n+=60;list()}}
+function health(){const s=[...ST.sources].sort((a,b)=>a.ok-b.ok||a.name.localeCompare(b.name));
  $("#sv").innerHTML=`<p class="meta">${ST.sources_ok} sources read, ${ST.sources_failed} failed. Failed or empty sources need a better URL or a browser-based scraper.</p>`+
  s.map(x=>`<div class="hl"><div><a href="${esc(safe(x.url))}" target="_blank" rel="noopener">${esc(x.name)}</a><small>${esc(x.category)}${x.error?", "+esc(x.error):""}</small></div>${x.ok?`<span class="${x.count?"good":"meta"}">${x.count} found</span>`:'<span class="bad">Failed</span>'}</div>`).join("")}
+function tab(v){document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+ ["d","t","s"].forEach(k=>$("#"+k+"v").hidden=k!==v);scrollTo(0,0)}
+function fill(sel,vals){$(sel).insertAdjacentHTML("beforeend",[...new Set(vals)].sort().map(v=>`<option>${esc(v)}</option>`).join(""))}
+function demo(){const a=[["Multi-hazard risk assessment for district disaster management plans","State SDMA","State SDMA / disaster management dept.","Odisha",4,1],["Climate vulnerability and risk assessment (CVRA) for coastal districts","State disaster management dept.","State SDMA / disaster management dept.","Tamil Nadu",9,0],["Expression of interest: landslide hazard zonation and early warning","State SDMA","State SDMA / disaster management dept.","Himachal Pradesh",2,0],["Consultancy for disaster risk index and exposure mapping","National institute","Central: nodal and policy","India",13,3],["Individual consultant: community-based resilience programme","UNDP","UN agencies","Global",6,0],["Urban flood risk and drainage resilience study","Development bank","Multilateral banks and climate funds","Global",25,5],["GIS-based flood inundation modelling services","State remote sensing centre","State remote sensing, GIS and climate centres","Gujarat",-3,8],["Capacity building on disaster risk reduction for officials","State institute","State institutes of disaster management and training","Gujarat",null,2]];
+ const run=today;ST={run_date:run,run_at:new Date().toISOString(),sources_ok:3,sources_failed:1,baseline:false,new_count:0,total:a.length,sources:[{name:"Example source A",category:"UN agencies",url:"#",ok:true,count:4},{name:"Example source B",category:"State SDMA / disaster management dept.",url:"#",ok:true,count:3},{name:"Example source C",category:"Central: nodal and policy",url:"#",ok:true,count:1},{name:"Example portal D",category:"State e-procurement portal",url:"#",ok:false,count:0,error:"Timeout"}]};
+ T=a.map((x,i)=>({id:i,title:x[0],source:x[1],category:x[2],geo:x[3],deadline:x[4]===null?null:iso(x[4]),tags:["flood","risk assessment"].slice(0,1+i%2),link:"#",first_seen:iso(-x[5]),last_seen:run,baseline:false}));
+ $("#demo").hidden=false}
 async function load(){
- try{
-  [T,ST]=await Promise.all([fetch("tenders.json").then(r=>r.json()),fetch("status.json").then(r=>r.json())]);
-  $("#meta").textContent=`Last scan ${new Date(ST.run_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}. ${ST.total} tenders from ${ST.sources_ok} sources, ${ST.new_count} new in the latest scan.`+(ST.baseline?" First scan: all results count as existing.":"");
-  fill("#geo",T.map(x=>x.geo));fill("#cat",T.map(x=>x.category));list();health();
- }catch(e){$("#meta").textContent="No scan data yet.";$("#list").innerHTML='<p class="empty">Run the "Daily tender scan" workflow once (see README), then reload. Opening this file directly from your computer also will not load data; use the GitHub Pages link.</p>'}}
-["q","when","geo","cat","soon"].forEach(i=>$("#"+i).addEventListener(i==="q"?"input":"change",()=>{S.n=100;list()}));
-document.querySelector(".tabs").onclick=e=>{const v=e.target.dataset.v;if(!v)return;
- document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));$("#tv").hidden=v!=="t";$("#sv").hidden=v!=="s"};
+ try{[T,ST]=await Promise.all([fetch("tenders.json").then(r=>{if(!r.ok)throw 0;return r.json()}),fetch("status.json").then(r=>{if(!r.ok)throw 0;return r.json()})])}catch(e){demo()}
+ $("#meta").textContent=`Last scan ${new Date(ST.run_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}. ${T.length} tenders tracked from ${ST.sources_ok+ST.sources_failed} sources.`+(ST.baseline?" First scan: all results count as existing, so New starts from tomorrow.":"");
+ fill("#geo",T.map(x=>x.geo));fill("#cat",T.map(x=>x.category));dash();list();health()}
+["q","st","geo","cat"].forEach(i=>$("#"+i).addEventListener(i==="q"?"input":"change",()=>{n=60;list()}));
+document.querySelector(".tabs").onclick=e=>{if(e.target.dataset.v)tab(e.target.dataset.v)};
 load();
 </script></body></html>
